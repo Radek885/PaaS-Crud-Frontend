@@ -111,9 +111,10 @@ const handleDelete = async (id) => {
           Budżet: <input
             type="number"
             value={budget}
+            disabled={!user}
             onChange={(e) => setBudget(e.target.value)}
-            onBlur={handleBudgetBlur}
-            style={{ width: "100px" }}
+            onBlur={user ? handleBudgetBlur : undefined}
+            style={{ width: "100px", backgroundColor: !user ? "#eee" : "white" }}
           /> PLN
         </label>
       </div>
