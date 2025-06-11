@@ -7,18 +7,20 @@ const API_URL = "https://paas-crud-app.onrender.com";
 const Tracker = ({ user }) => {
   const [expenses, setExpenses] = useState([]);
   const [form, setForm] = useState({ amount: "", description: "", category: "", date: "" });
+  const [editingId, setEditingId] = useState(null);
+
+  const fetchExpenses = async () => {
+    try {
+      const res = await axios.get(`${API_URL}/expenses`, {
+        headers: user ? { Authorization: `Bearer ${user.token}` } : {}
+      });
+      setExpenses(res.data);
+    } catch (err) {
+      console.error("Błąd podczas pobierania wydatków:", err);
+    }
+  };
 
   useEffect(() => {
-    const fetchExpenses = async () => {
-      try {
-        const res = await axios.get(`${API_URL}/expenses`, {
-          headers: user ? { Authorization: `Bearer ${user.token}` } : {}
-        });
-        setExpenses(res.data);
-      } catch (err) {
-        console.error("Błąd podczas pobierania wydatków:", err);
-      }
-    };
     fetchExpenses();
   }, [user]);
 
@@ -35,24 +37,57 @@ const Tracker = ({ user }) => {
     }
   };
 
+  const handleDelete = async (id) => {
+    if (!window.confirm("Na pewno usunąć ten wydatek?")) return;
+    await axios.delete(`${API_URL}/expenses/${id}`, {
+      headers: { Authorization: `Bearer ${user.token}` }
+    });
+    fetchExpenses();
+  };
+
+  const handleEdit = (expense) => {
+    setEditingId(expense.id);
+    setForm({
+      amount: expense.amount,
+      description: expense.description,
+      category: expense.category,
+      date: expense.date.split("T")[0] // Upewnij się że data ma format YYYY-MM-DD
+    });
+  };
+
+  const handleUpdate = async () => {
+    await axios.put(`${API_URL}/expenses/${editingId}`, form, {
+      headers: { Authorization: `Bearer ${user.token}` }
+    });
+    setEditingId(null);
+    setForm({ amount: "", description: "", category: "", date: "" });
+    fetchExpenses();
+  };
+
   return (
     <div>
       <h2>Tracker</h2>
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={editingId ? (e) => { e.preventDefault(); handleUpdate(); } : handleSubmit}>
         <input placeholder="Kwota" value={form.amount} onChange={e => setForm({ ...form, amount: e.target.value })} required />
         <input placeholder="Opis" value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} />
         <input placeholder="Kategoria" value={form.category} onChange={e => setForm({ ...form, category: e.target.value })} />
         <input type="date" value={form.date} onChange={e => setForm({ ...form, date: e.target.value })} required />
-        <button type="submit">Dodaj</button>
+        <button type="submit">{editingId ? "Zapisz zmiany" : "Dodaj"}</button>
+        {editingId && <button onClick={() => { setEditingId(null); setForm({ amount: "", description: "", category: "", date: "" }); }}>Anuluj</button>}
       </form>
       <ul>
         {expenses.map(e => (
-          <li key={e.id}>{e.amount} PLN - {e.description} ({e.category}) - {e.date}</li>
+          <li key={e.id}>
+            {e.amount} PLN - {e.description} ({e.category}) - {e.date.slice(0, 10)}{" "}
+            <button onClick={() => handleEdit(e)}>✏️</button>
+            <button onClick={() => handleDelete(e.id)}>🗑</button>
+          </li>
         ))}
       </ul>
     </div>
   );
 };
+
 
 const Login = ({ setUser }) => {
   const [email, setEmail] = useState("");
@@ -103,18 +138,28 @@ const Register = () => {
 };
 
 const Account = ({ user, setUser }) => {
-  const handleDeleteAll = async () => {
-    if (!window.confirm("Na pewno usunąć wszystkie dane?")) return;
-    await axios.delete(`${API_URL}/me`, {
+  const deleteOnlyData = async () => {
+    if (!window.confirm("Czy na pewno chcesz usunąć wszystkie swoje wydatki?")) return;
+    await axios.delete(`${API_URL}/me/expenses`, {
       headers: { Authorization: `Bearer ${user.token}` }
     });
+    alert("Wszystkie dane zostały usunięte.");
+  };
+
+  const deleteAccount = async () => {
+    if (!window.confirm("Czy na pewno chcesz usunąć konto? Tej operacji nie można cofnąć.")) return;
+    await axios.delete(`${API_URL}/me/account`, {
+      headers: { Authorization: `Bearer ${user.token}` }
+    });
+    alert("Konto zostało usunięte.");
     setUser(null);
   };
 
   return (
     <div>
       <h2>Moje konto</h2>
-      <button onClick={handleDeleteAll}>Usuń wszystkie dane i konto</button>
+      <button onClick={deleteOnlyData}>🧹 Usuń wszystkie dane</button>
+      <button onClick={deleteAccount}>❌ Usuń konto</button>
     </div>
   );
 };
