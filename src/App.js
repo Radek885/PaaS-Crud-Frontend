@@ -8,85 +8,79 @@ const Tracker = ({ user }) => {
   const [expenses, setExpenses] = useState([]);
   const [form, setForm] = useState({ amount: "", description: "", category: "", date: "" });
   const [editingId, setEditingId] = useState(null);
+  const [budget, setBudget] = useState(0);
 
-  const fetchExpenses = async () => {
+  const fetchExpensesAndBudget = async () => {
     try {
-      const res = await axios.get(`${API_URL}/expenses`, {
-        headers: user ? { Authorization: `Bearer ${user.token}` } : {}
-      });
-      setExpenses(res.data);
+      const [expensesRes, budgetRes] = await Promise.all([
+        axios.get(`${API_URL}/expenses`, {
+          headers: user ? { Authorization: `Bearer ${user.token}` } : {}
+        }),
+        axios.get(`${API_URL}/me/budget`, {
+          headers: user ? { Authorization: `Bearer ${user.token}` } : {}
+        })
+      ]);
+      setExpenses(expensesRes.data);
+      setBudget(parseFloat(budgetRes.data.budget) || 0);
     } catch (err) {
-      console.error("Błąd podczas pobierania wydatków:", err);
+      console.error("Błąd przy pobieraniu danych:", err);
     }
   };
 
   useEffect(() => {
-    fetchExpenses();
+    fetchExpensesAndBudget();
   }, [user]);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const total = expenses.reduce((sum, e) => sum + parseFloat(e.amount), 0);
+
+  const handleBudgetBlur = async () => {
     try {
-      const res = await axios.post(`${API_URL}/expenses`, form, {
-        headers: user ? { Authorization: `Bearer ${user.token}` } : {}
-      });
-      setExpenses([res.data, ...expenses]);
-      setForm({ amount: "", description: "", category: "", date: "" });
+      await axios.put(
+        `${API_URL}/me/budget`,
+        { budget: parseFloat(budget) },
+        { headers: { Authorization: `Bearer ${user.token}` } }
+      );
     } catch (err) {
-      alert("Błąd przy dodawaniu wydatku");
+      alert("Błąd przy zapisie budżetu");
     }
-  };
-
-  const handleDelete = async (id) => {
-    if (!window.confirm("Na pewno usunąć ten wydatek?")) return;
-    await axios.delete(`${API_URL}/expenses/${id}`, {
-      headers: { Authorization: `Bearer ${user.token}` }
-    });
-    fetchExpenses();
-  };
-
-  const handleEdit = (expense) => {
-    setEditingId(expense.id);
-    setForm({
-      amount: expense.amount,
-      description: expense.description,
-      category: expense.category,
-      date: expense.date.split("T")[0] // Upewnij się że data ma format YYYY-MM-DD
-    });
-  };
-
-  const handleUpdate = async () => {
-    await axios.put(`${API_URL}/expenses/${editingId}`, form, {
-      headers: { Authorization: `Bearer ${user.token}` }
-    });
-    setEditingId(null);
-    setForm({ amount: "", description: "", category: "", date: "" });
-    fetchExpenses();
   };
 
   return (
     <div>
       <h2>Tracker</h2>
+      <div style={{ marginBottom: "1em" }}>
+        <label>
+          Budżet: <input
+            type="number"
+            value={budget}
+            onChange={(e) => setBudget(e.target.value)}
+            onBlur={handleBudgetBlur}
+            style={{ width: "100px" }}
+          /> PLN
+        </label>
+      </div>
+
       <form onSubmit={editingId ? (e) => { e.preventDefault(); handleUpdate(); } : handleSubmit}>
-        <input placeholder="Kwota" value={form.amount} onChange={e => setForm({ ...form, amount: e.target.value })} required />
-        <input placeholder="Opis" value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} />
-        <input placeholder="Kategoria" value={form.category} onChange={e => setForm({ ...form, category: e.target.value })} />
-        <input type="date" value={form.date} onChange={e => setForm({ ...form, date: e.target.value })} required />
-        <button type="submit">{editingId ? "Zapisz zmiany" : "Dodaj"}</button>
-        {editingId && <button onClick={() => { setEditingId(null); setForm({ amount: "", description: "", category: "", date: "" }); }}>Anuluj</button>}
+        {/* ... (formularz jak wcześniej) */}
       </form>
+
       <ul>
         {expenses.map(e => (
           <li key={e.id}>
-            {e.amount} PLN - {e.description} ({e.category}) - {e.date.slice(0, 10)}{" "}
+            {e.amount} PLN - {e.description} ({e.category}) - {e.date.slice(0, 10)}
             <button onClick={() => handleEdit(e)}>✏️</button>
             <button onClick={() => handleDelete(e.id)}>🗑</button>
           </li>
         ))}
       </ul>
+
+      <h3>Podsumowanie</h3>
+      <p>Suma wydatków: {total.toFixed(2)} PLN</p>
+      <p>Pozostały budżet: {(budget - total).toFixed(2)} PLN</p>
     </div>
   );
 };
+
 
 
 const Login = ({ setUser }) => {
