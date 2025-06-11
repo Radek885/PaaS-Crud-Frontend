@@ -10,6 +10,53 @@ const Tracker = ({ user }) => {
   const [editingId, setEditingId] = useState(null);
   const [budget, setBudget] = useState(0);
 
+  const handleSubmit = async (e) => {
+  e.preventDefault();
+  try {
+    const res = await axios.post(`${API_URL}/expenses`, form, {
+      headers: { Authorization: `Bearer ${user.token}` }
+    });
+    setExpenses([...expenses, res.data]);
+    setForm({ amount: "", description: "", category: "", date: "" });
+  } catch (err) {
+    alert("Błąd przy dodawaniu wydatku");
+  }
+};
+
+const handleUpdate = async () => {
+  try {
+    await axios.put(`${API_URL}/expenses/${editingId}`, form, {
+      headers: { Authorization: `Bearer ${user.token}` }
+    });
+    setExpenses(expenses.map(e => e.id === editingId ? { ...form, id: editingId } : e));
+    setForm({ amount: "", description: "", category: "", date: "" });
+    setEditingId(null);
+  } catch (err) {
+    alert("Błąd przy aktualizacji");
+  }
+};
+
+const handleEdit = (e) => {
+  setForm({
+    amount: e.amount,
+    description: e.description,
+    category: e.category,
+    date: e.date.slice(0, 10)
+  });
+  setEditingId(e.id);
+};
+
+const handleDelete = async (id) => {
+  try {
+    await axios.delete(`${API_URL}/expenses/${id}`, {
+      headers: { Authorization: `Bearer ${user.token}` }
+    });
+    setExpenses(expenses.filter(e => e.id !== id));
+  } catch (err) {
+    alert("Błąd przy usuwaniu wydatku");
+  }
+};
+
   const fetchExpensesAndBudget = async () => {
     try {
       const [expensesRes, budgetRes] = await Promise.all([
@@ -60,9 +107,31 @@ const Tracker = ({ user }) => {
         </label>
       </div>
 
-      <form onSubmit={editingId ? (e) => { e.preventDefault(); handleUpdate(); } : handleSubmit}>
-        {/* ... (formularz jak wcześniej) */}
-      </form>
+      <form onSubmit={editingId ? handleUpdate : handleSubmit}>
+  <input
+    type="number"
+    placeholder="Kwota"
+    value={form.amount}
+    onChange={(e) => setForm({ ...form, amount: e.target.value })}
+  />
+  <input
+    placeholder="Opis"
+    value={form.description}
+    onChange={(e) => setForm({ ...form, description: e.target.value })}
+  />
+  <input
+    placeholder="Kategoria"
+    value={form.category}
+    onChange={(e) => setForm({ ...form, category: e.target.value })}
+  />
+  <input
+    type="date"
+    value={form.date}
+    onChange={(e) => setForm({ ...form, date: e.target.value })}
+  />
+  <button type="submit">{editingId ? "Zapisz" : "Dodaj"}</button>
+</form>
+
 
       <ul>
         {expenses.map(e => (
