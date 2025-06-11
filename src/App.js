@@ -1,86 +1,150 @@
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
+import { BrowserRouter as Router, Route, Routes, Link, Navigate } from "react-router-dom";
+import axios from "axios";
 
-const API_URL = "https://paas-blog.onrender.com"; // <- ZMIEŃ NA WŁAŚCIWY URL backendu
+const API_URL = "https://paas-crud-app.onrender.com";
 
-function App() {
-  const [posts, setPosts] = useState([]);
-  const [form, setForm] = useState({
-  title: "",
-  content: "",
-  username: "",
-  image_url: "",
-});
-
+const Tracker = ({ user }) => {
+  const [expenses, setExpenses] = useState([]);
+  const [form, setForm] = useState({ amount: "", description: "", category: "", date: "" });
 
   useEffect(() => {
-    fetch(`${API_URL}/posts`)
-      .then((res) => res.json())
-      .then(setPosts)
-      .catch(console.error);
-  }, []);
+    const fetchExpenses = async () => {
+      try {
+        const res = await axios.get(`${API_URL}/expenses`, {
+          headers: user ? { Authorization: `Bearer ${user.token}` } : {}
+        });
+        setExpenses(res.data);
+      } catch (err) {
+        console.error("Błąd podczas pobierania wydatków:", err);
+      }
+    };
+    fetchExpenses();
+  }, [user]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const res = await fetch(`${API_URL}/posts`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
-    });
-    const newPost = await res.json();
-    setPosts([newPost, ...posts]);
-    setForm({ title: "", content: "", username: "", image_url: ""});
+    try {
+      const res = await axios.post(`${API_URL}/expenses`, form, {
+        headers: user ? { Authorization: `Bearer ${user.token}` } : {}
+      });
+      setExpenses([res.data, ...expenses]);
+      setForm({ amount: "", description: "", category: "", date: "" });
+    } catch (err) {
+      alert("Błąd przy dodawaniu wydatku");
+    }
   };
 
   return (
-    <div style={{ padding: "2em", fontFamily: "sans-serif" }}>
-      <h1>Blog</h1>
-
+    <div>
+      <h2>Tracker</h2>
       <form onSubmit={handleSubmit}>
-        <input className="input-wide"
-          placeholder="Nazwa użytkownika"
-          value={form.username}
-          onChange={(e) => setForm({ ...form, username: e.target.value })}
-        />
-        <br />
-        <input className="input-wide"
-          placeholder="Link do zdjęcia"
-          value={form.image_url}
-          onChange={(e) => setForm({ ...form, image_url: e.target.value })}
-        />
-        <br />
-        <input className="input-wide"
-          placeholder="Tytuł"
-          value={form.title}
-          onChange={(e) => setForm({ ...form, title: e.target.value })}
-          required
-        />
-        <br />
-        <textarea className="input-wide"
-          placeholder="Treść"
-          value={form.content}
-          onChange={(e) => setForm({ ...form, content: e.target.value })}
-          required
-        />
-        <br />
-        <button type="submit">Dodaj post</button>
+        <input placeholder="Kwota" value={form.amount} onChange={e => setForm({ ...form, amount: e.target.value })} required />
+        <input placeholder="Opis" value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} />
+        <input placeholder="Kategoria" value={form.category} onChange={e => setForm({ ...form, category: e.target.value })} />
+        <input type="date" value={form.date} onChange={e => setForm({ ...form, date: e.target.value })} required />
+        <button type="submit">Dodaj</button>
       </form>
-
-      <hr />
-
-      {posts.map((post) => (
-        <div key={post.id} style={{ marginBottom: "1em" }}>
-          <h2>{post.title}</h2>
-          <p>{post.content}</p>
-          <p><strong>Autor:</strong> {post.username || "Anonim"}</p>
-          {post.image_url && (
-            <img src={post.image_url} alt="Obrazek" style={{ maxWidth: "300px", maxHeight: "200px" }} />
-          )}
-          <br />
-          <small>{new Date(post.created_at).toLocaleString()}</small>
-        </div>
-      ))}
-
+      <ul>
+        {expenses.map(e => (
+          <li key={e.id}>{e.amount} PLN - {e.description} ({e.category}) - {e.date}</li>
+        ))}
+      </ul>
     </div>
+  );
+};
+
+const Login = ({ setUser }) => {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await axios.post(`${API_URL}/login`, { email, password });
+      setUser({ token: res.data.token });
+    } catch {
+      alert("Błędne dane logowania");
+    }
+  };
+
+  return (
+    <form onSubmit={handleLogin}>
+      <h2>Logowanie</h2>
+      <input placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} />
+      <input placeholder="Hasło" type="password" value={password} onChange={e => setPassword(e.target.value)} />
+      <button type="submit">Zaloguj</button>
+    </form>
+  );
+};
+
+const Register = () => {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  const handleRegister = async (e) => {
+    e.preventDefault();
+    try {
+      await axios.post(`${API_URL}/register`, { email, password });
+      alert("Zarejestrowano! Możesz się teraz zalogować.");
+    } catch {
+      alert("Email już istnieje");
+    }
+  };
+
+  return (
+    <form onSubmit={handleRegister}>
+      <h2>Rejestracja</h2>
+      <input placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} />
+      <input placeholder="Hasło" type="password" value={password} onChange={e => setPassword(e.target.value)} />
+      <button type="submit">Zarejestruj</button>
+    </form>
+  );
+};
+
+const Account = ({ user, setUser }) => {
+  const handleDeleteAll = async () => {
+    if (!window.confirm("Na pewno usunąć wszystkie dane?")) return;
+    await axios.delete(`${API_URL}/me`, {
+      headers: { Authorization: `Bearer ${user.token}` }
+    });
+    setUser(null);
+  };
+
+  return (
+    <div>
+      <h2>Moje konto</h2>
+      <button onClick={handleDeleteAll}>Usuń wszystkie dane i konto</button>
+    </div>
+  );
+};
+
+function App() {
+  const [user, setUser] = useState(null);
+
+  return (
+    <Router>
+      <nav style={{ display: "flex", gap: "1em", padding: "1em", background: "#eee" }}>
+        <Link to="/">Tracker</Link>
+        {!user ? (
+          <>
+            <Link to="/login">Logowanie</Link>
+            <Link to="/register">Rejestracja</Link>
+          </>
+        ) : (
+          <>
+            <Link to="/account">Moje konto</Link>
+            <a href="#" onClick={() => setUser(null)}>Wyloguj</a>
+          </>
+        )}
+      </nav>
+      <Routes>
+        <Route path="/" element={<Tracker user={user} />} />
+        <Route path="/login" element={!user ? <Login setUser={setUser} /> : <Navigate to="/" />} />
+        <Route path="/register" element={!user ? <Register /> : <Navigate to="/" />} />
+        <Route path="/account" element={user ? <Account user={user} setUser={setUser} /> : <Navigate to="/login" />} />
+      </Routes>
+    </Router>
   );
 }
 
