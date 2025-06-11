@@ -10,104 +10,17 @@ const Tracker = ({ user }) => {
   const [editingId, setEditingId] = useState(null);
   const [budget, setBudget] = useState(0);
 
-  // Przykładowe dane demo
-  const demoExpenses = [
-    { id: 1, amount: 50, description: "Zakupy", category: "Spożywcze", date: "2025-06-01" },
-    { id: 2, amount: 120, description: "Paliwo", category: "Transport", date: "2025-06-02" },
-    { id: 3, amount: 30, description: "Netflix", category: "Rozrywka", date: "2025-06-03" }
-  ];
-
-  const fetchExpensesAndBudget = async () => {
-    if (!user || !user.token) return;
-    try {
-      const [expensesRes, budgetRes] = await Promise.all([
-        axios.get(`${API_URL}/expenses`, {
-          headers: { Authorization: `Bearer ${user.token}` }
-        }),
-        axios.get(`${API_URL}/me/budget`, {
-          headers: { Authorization: `Bearer ${user.token}` }
-        })
-      ]);
-      setExpenses(expensesRes.data);
-      setBudget(parseFloat(budgetRes.data.budget) || 0);
-    } catch (err) {
-      console.error("Błąd przy pobieraniu danych:", err);
-    }
-  };
-
-  useEffect(() => {
-    if (user) {
-      fetchExpensesAndBudget();
-    } else {
-      setExpenses(demoExpenses);
-      setBudget(300); // przykładowy budżet demo
-    }
-  }, [user]);
-
-  const total = expenses.reduce((sum, e) => sum + parseFloat(e.amount), 0);
-
-  const handleBudgetBlur = async () => {
-    try {
-      await axios.put(
-        `${API_URL}/me/budget`,
-        { budget: parseFloat(budget) },
-        { headers: { Authorization: `Bearer ${user.token}` } }
-      );
-    } catch (err) {
-      alert("Błąd przy zapisie budżetu");
-    }
-  };
-
-  return (
-    <div>
-      <h2>Tracker</h2>
-
-      {!user && (
-        <p style={{ color: "gray", marginBottom: "1em" }}>
-          <strong>Zaloguj się, aby kontrolować własne wydatki</strong>
-        </p>
-      )}
-
-      <div style={{ marginBottom: "1em" }}>
-        <label>
-          Budżet:{" "}
-          <input
-            type="number"
-            value={budget}
-            disabled={!user}
-            onChange={(e) => setBudget(e.target.value)}
-            onBlur={handleBudgetBlur}
-            style={{ width: "100px" }}
-          />{" "}
-          PLN
-        </label>
-      </div>
-
-      {user && (
-        <form onSubmit={editingId ? (e) => { e.preventDefault(); handleUpdate(); } : handleSubmit}>
-          {/* Formularz tylko dla zalogowanych */}
-        </form>
-      )}
-
-      <ul>
-        {expenses.map(e => (
-          <li key={e.id}>
-            {e.amount} PLN - {e.description} ({e.category}) - {e.date.slice(0, 10)}
-            {user && (
-              <>
-                <button onClick={() => handleEdit(e)}>✏️</button>
-                <button onClick={() => handleDelete(e.id)}>🗑</button>
-              </>
-            )}
-          </li>
-        ))}
-      </ul>
-
-      <h3>Podsumowanie</h3>
-      <p>Suma wydatków: {total.toFixed(2)} PLN</p>
-      <p>Pozostały budżet: {(budget - total).toFixed(2)} PLN</p>
-    </div>
-  );
+  const handleSubmit = async (e) => {
+  e.preventDefault();
+  try {
+    const res = await axios.post(`${API_URL}/expenses`, form, {
+      headers: { Authorization: `Bearer ${user.token}` }
+    });
+    setExpenses([...expenses, res.data]);
+    setForm({ amount: "", description: "", category: "", date: "" });
+  } catch (err) {
+    alert("Błąd przy dodawaniu wydatku");
+  }
 };
 
 const handleUpdate = async () => {
@@ -162,8 +75,19 @@ const handleDelete = async (id) => {
   };
 
   useEffect(() => {
-    fetchExpensesAndBudget();
-  }, [user]);
+  if (!user) {
+    setExpenses([
+      { id: 1, amount: 50, description: "Zakupy", category: "Spożywcze", date: "2025-06-01" },
+      { id: 2, amount: 120, description: "Paliwo", category: "Transport", date: "2025-06-02" },
+      { id: 3, amount: 30, description: "Netflix", category: "Rozrywka", date: "2025-06-03" }
+    ]);
+    setBudget(300); // przykładowy budżet
+    return;
+  }
+
+  fetchExpensesAndBudget();
+}, [user]);
+
 
   const total = expenses.reduce((sum, e) => sum + parseFloat(e.amount), 0);
 
@@ -194,38 +118,50 @@ const handleDelete = async (id) => {
         </label>
       </div>
 
-      <form onSubmit={editingId ? handleUpdate : handleSubmit}>
-  <input
-    type="number"
-    placeholder="Kwota"
-    value={form.amount}
-    onChange={(e) => setForm({ ...form, amount: e.target.value })}
-  />
-  <input
-    placeholder="Opis"
-    value={form.description}
-    onChange={(e) => setForm({ ...form, description: e.target.value })}
-  />
-  <input
-    placeholder="Kategoria"
-    value={form.category}
-    onChange={(e) => setForm({ ...form, category: e.target.value })}
-  />
-  <input
-    type="date"
-    value={form.date}
-    onChange={(e) => setForm({ ...form, date: e.target.value })}
-  />
-  <button type="submit">{editingId ? "Zapisz" : "Dodaj"}</button>
-</form>
+      {!user && (
+        <p style={{ color: "gray", marginBottom: "1em" }}>
+          <strong>Zaloguj się, aby kontrolować własne wydatki i zapisywać dane.</strong>
+        </p>
+      )}
+
+      {user && (
+        <form onSubmit={editingId ? handleUpdate : handleSubmit}>
+          <input
+            type="number"
+            placeholder="Kwota"
+            value={form.amount}
+            onChange={(e) => setForm({ ...form, amount: e.target.value })}
+          />
+          <input
+            placeholder="Opis"
+            value={form.description}
+            onChange={(e) => setForm({ ...form, description: e.target.value })}
+          />
+          <input
+            placeholder="Kategoria"
+            value={form.category}
+            onChange={(e) => setForm({ ...form, category: e.target.value })}
+          />
+          <input
+            type="date"
+            value={form.date}
+            onChange={(e) => setForm({ ...form, date: e.target.value })}
+          />
+          <button type="submit">{editingId ? "Zapisz" : "Dodaj"}</button>
+        </form>
+      )}
 
 
       <ul>
         {expenses.map(e => (
           <li key={e.id}>
             {e.amount} PLN - {e.description} ({e.category}) - {e.date.slice(0, 10)}
-            <button onClick={() => handleEdit(e)}>✏️</button>
-            <button onClick={() => handleDelete(e.id)}>🗑</button>
+            {user && (
+              <>
+                <button onClick={() => handleEdit(e)}>✏️</button>
+                <button onClick={() => handleDelete(e.id)}>🗑</button>
+              </>
+            )}
           </li>
         ))}
       </ul>
