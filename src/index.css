@@ -17,3 +17,118 @@ code {
   width: 500px;
 }
 
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: #f8f9fa;
+  color: #333;
+}
+
+nav {
+  background-color: #e9ecef;
+  padding: 1em;
+  display: flex;
+  gap: 1em;
+}
+
+nav a {
+  text-decoration: none;
+  color: #007bff;
+  font-weight: bold;
+}
+
+nav a:hover {
+  text-decoration: underline;
+}
+
+h2, h3 {
+  color: #343a40;
+}
+
+form {
+  margin-bottom: 2em;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5em;
+  max-width: 400px;
+}
+
+form input,
+form button {
+  padding: 0.5em;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+form button {
+  background-color: #007bff;
+  color: white;
+  cursor: pointer;
+  border: none;
+}
+
+form button:hover {
+  background-color: #0056b3;
+}
+
+label input {
+  margin-left: 0.5em;
+}
+
+ul {
+  list-style: none;
+  padding: 0;
+}
+
+ul li {
+  background: white;
+  margin-bottom: 0.5em;
+  padding: 0.7em;
+  border-radius: 5px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+ul li button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  margin-left: 0.5em;
+  font-size: 1.1em;
+}
+
+ul li button:hover {
+  color: red;
+}
+
+input[disabled] {
+  background-color: #e9ecef;
+}
+
+p {
+  margin: 0.5em 0;
+}
+
+button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+@media (max-width: 600px) {
+  nav {
+    flex-direction: column;
+    gap: 0.5em;
+  }
+
+  form {
+    width: 100%;
+  }
+
+  ul li {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
