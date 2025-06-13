@@ -104,73 +104,97 @@ const handleDelete = async (id) => {
   };
 
   return (
-    <div>
-      <h2>Tracker</h2>
-      <div style={{ marginBottom: "1em" }}>
-        <label>
-          Budżet: <input
-            type="number"
-            value={budget}
-            disabled={!user}
-            onChange={(e) => setBudget(e.target.value)}
-            onBlur={user ? handleBudgetBlur : undefined}
-            style={{ width: "100px", backgroundColor: !user ? "#eee" : "white" }}
-          /> PLN
-        </label>
+          <div className="container py-4">
+        <h2 className="mb-4">Tracker</h2>
+
+        <div className="mb-3">
+          <label className="form-label">
+            Budżet:
+            <input
+              type="number"
+              className="form-control d-inline-block w-auto ms-2"
+              value={budget}
+              disabled={!user}
+              onChange={(e) => setBudget(e.target.value)}
+              onBlur={user ? handleBudgetBlur : undefined}
+            />
+            PLN
+          </label>
+        </div>
+
+        {!user && (
+          <div className="alert alert-secondary">
+            <strong>Zaloguj się, aby kontrolować własne wydatki i zapisywać dane.</strong>
+          </div>
+        )}
+
+        {user && (
+          <form
+            onSubmit={editingId ? handleUpdate : handleSubmit}
+            className="mb-4 row g-2 align-items-end"
+          >
+            <div className="col-md-2">
+              <input
+                type="number"
+                className="form-control"
+                placeholder="Kwota"
+                value={form.amount}
+                onChange={(e) => setForm({ ...form, amount: e.target.value })}
+              />
+            </div>
+            <div className="col-md-3">
+              <input
+                className="form-control"
+                placeholder="Opis"
+                value={form.description}
+                onChange={(e) => setForm({ ...form, description: e.target.value })}
+              />
+            </div>
+            <div className="col-md-3">
+              <input
+                className="form-control"
+                placeholder="Kategoria"
+                value={form.category}
+                onChange={(e) => setForm({ ...form, category: e.target.value })}
+              />
+            </div>
+            <div className="col-md-2">
+              <input
+                type="date"
+                className="form-control"
+                value={form.date}
+                onChange={(e) => setForm({ ...form, date: e.target.value })}
+              />
+            </div>
+            <div className="col-md-2">
+              <button type="submit" className="btn btn-primary w-100">
+                {editingId ? "Zapisz" : "Dodaj"}
+              </button>
+            </div>
+          </form>
+        )}
+
+        <ul className="list-group mb-4">
+          {expenses.map((e) => (
+            <li key={e.id} className="list-group-item d-flex justify-content-between align-items-center">
+              <div>
+                {e.amount} PLN - {e.description} ({e.category}) - {e.date.slice(0, 10)}
+              </div>
+              {user && (
+                <div>
+                  <button className="btn btn-sm btn-outline-secondary me-2" onClick={() => handleEdit(e)}>✏️</button>
+                  <button className="btn btn-sm btn-outline-danger" onClick={() => handleDelete(e.id)}>🗑</button>
+                </div>
+              )}
+            </li>
+          ))}
+        </ul>
+
+        <h3>Podsumowanie</h3>
+        <p><strong>Suma wydatków:</strong> {total.toFixed(2)} PLN</p>
+        <p><strong>Pozostały budżet:</strong> {(budget - total).toFixed(2)} PLN</p>
       </div>
 
-      {!user && (
-        <p style={{ color: "gray", marginBottom: "1em" }}>
-          <strong>Zaloguj się, aby kontrolować własne wydatki i zapisywać dane.</strong>
-        </p>
-      )}
-
-      {user && (
-        <form onSubmit={editingId ? handleUpdate : handleSubmit}>
-          <input
-            type="number"
-            placeholder="Kwota"
-            value={form.amount}
-            onChange={(e) => setForm({ ...form, amount: e.target.value })}
-          />
-          <input
-            placeholder="Opis"
-            value={form.description}
-            onChange={(e) => setForm({ ...form, description: e.target.value })}
-          />
-          <input
-            placeholder="Kategoria"
-            value={form.category}
-            onChange={(e) => setForm({ ...form, category: e.target.value })}
-          />
-          <input
-            type="date"
-            value={form.date}
-            onChange={(e) => setForm({ ...form, date: e.target.value })}
-          />
-          <button type="submit">{editingId ? "Zapisz" : "Dodaj"}</button>
-        </form>
-      )}
-
-
-      <ul>
-        {expenses.map(e => (
-          <li key={e.id}>
-            {e.amount} PLN - {e.description} ({e.category}) - {e.date.slice(0, 10)}
-            {user && (
-              <>
-                <button onClick={() => handleEdit(e)}>✏️</button>
-                <button onClick={() => handleDelete(e.id)}>🗑</button>
-              </>
-            )}
-          </li>
-        ))}
-      </ul>
-
-      <h3>Podsumowanie</h3>
-      <p>Suma wydatków: {total.toFixed(2)} PLN</p>
-      <p>Pozostały budżet: {(budget - total).toFixed(2)} PLN</p>
-    </div>
   );
 };
 
@@ -191,12 +215,13 @@ const Login = ({ setUser }) => {
   };
 
   return (
-    <form onSubmit={handleLogin}>
+    <form onSubmit={handleLogin} className="container mt-4">
       <h2>Logowanie</h2>
-      <input placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} />
-      <input placeholder="Hasło" type="password" value={password} onChange={e => setPassword(e.target.value)} />
-      <button type="submit">Zaloguj</button>
+      <input className="form-control mb-2" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} />
+      <input className="form-control mb-2" placeholder="Hasło" type="password" value={password} onChange={e => setPassword(e.target.value)} />
+      <button className="btn btn-primary" type="submit">Zaloguj</button>
     </form>
+
   );
 };
 
@@ -243,11 +268,12 @@ const Account = ({ user, setUser }) => {
   };
 
   return (
-    <div>
+    <div className="container mt-4">
       <h2>Moje konto</h2>
-      <button onClick={deleteOnlyData}>🧹 Usuń wszystkie dane</button>
-      <button onClick={deleteAccount}>❌ Usuń konto</button>
+      <button className="btn btn-warning me-2" onClick={deleteOnlyData}>🧹 Usuń wszystkie dane</button>
+      <button className="btn btn-danger" onClick={deleteAccount}>❌ Usuń konto</button>
     </div>
+
   );
 };
 
@@ -256,20 +282,25 @@ function App() {
 
   return (
     <Router>
-      <nav style={{ display: "flex", gap: "1em", padding: "1em", background: "#eee" }}>
-        <Link to="/">Tracker</Link>
-        {!user ? (
-          <>
-            <Link to="/login">Logowanie</Link>
-            <Link to="/register">Rejestracja</Link>
-          </>
-        ) : (
-          <>
-            <Link to="/account">Moje konto</Link>
-            <a href="#" onClick={() => setUser(null)}>Wyloguj</a>
-          </>
-        )}
+      <nav className="navbar navbar-expand-lg navbar-light bg-light px-3 mb-4">
+        <Link className="navbar-brand" to="/">Tracker</Link>
+        <div className="collapse navbar-collapse">
+          <div className="navbar-nav">
+            {!user ? (
+              <>
+                <Link className="nav-link" to="/login">Logowanie</Link>
+                <Link className="nav-link" to="/register">Rejestracja</Link>
+              </>
+            ) : (
+              <>
+                <Link className="nav-link" to="/account">Moje konto</Link>
+                <a className="nav-link" href="#" onClick={() => setUser(null)}>Wyloguj</a>
+              </>
+            )}
+          </div>
+        </div>
       </nav>
+
       <Routes>
         <Route path="/" element={<Tracker user={user} />} />
         <Route path="/login" element={!user ? <Login setUser={setUser} /> : <Navigate to="/" />} />
