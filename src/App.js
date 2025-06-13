@@ -241,7 +241,7 @@ const Register = () => {
   };
 
   return (
-    <form onSubmit={handleRegister}>
+    <form onSubmit={handleRegister} className="container mt-4">
       <h2>Rejestracja</h2>
       <input className="form-control mb-2" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} />
       <input className="form-control mb-2" placeholder="Hasło" type="password" value={password} onChange={e => setPassword(e.target.value)} />
