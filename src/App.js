@@ -131,7 +131,7 @@ const handleDelete = async (id) => {
         {user && (
           <form
             onSubmit={editingId ? handleUpdate : handleSubmit}
-            className="mb-4 row g-2 align-items-end"
+            className="row g-2 align-items-end mb-4"
           >
             <div className="col-md-2">
               <input
@@ -172,6 +172,7 @@ const handleDelete = async (id) => {
               </button>
             </div>
           </form>
+
         )}
 
         <ul className="list-group mb-4">
@@ -242,9 +243,9 @@ const Register = () => {
   return (
     <form onSubmit={handleRegister}>
       <h2>Rejestracja</h2>
-      <input placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} />
-      <input placeholder="Hasło" type="password" value={password} onChange={e => setPassword(e.target.value)} />
-      <button type="submit">Zarejestruj</button>
+      <input className="form-control mb-2" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} />
+      <input className="form-control mb-2" placeholder="Hasło" type="password" value={password} onChange={e => setPassword(e.target.value)} />
+      <button className="btn btn-primary" type="submit">Zarejestruj</button>
     </form>
   );
 };
